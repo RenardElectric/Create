@@ -77,6 +77,9 @@ public class CClient extends ConfigBase {
 	public final ConfigGroup trains = group(1, "trains", Comments.trains);
 	public final ConfigFloat mountedZoomMultiplier = f(3, 0, "mountedZoomMultiplier", Comments.mountedZoomMultiplier);
 
+	public final ConfigGroup custom = group(1, "custom", Comments.custom);
+	public final ConfigInt maxTrackVisualizerDistance = i(32, 32, "maxTrackVisualizerDistance", Comments.maxTrackVisualizerDistance);
+
 	@Override
 	public String getName() {
 		return "client";
@@ -145,6 +148,9 @@ public class CClient extends ConfigBase {
 
 		static String trains = "Railway related settings";
 		static String mountedZoomMultiplier = "How far away the Camera should zoom when seated on a train";
+
+		static String custom = "Custom settings";
+		static String maxTrackVisualizerDistance = "Maximum distance to visualize a track segment.";
 	}
 
 }

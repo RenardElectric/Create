@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.AABB;
 
 public class SignalTileEntity extends SmartTileEntity implements ITransformableTE {
@@ -47,12 +48,14 @@ public class SignalTileEntity extends SmartTileEntity implements ITransformableT
 	private OverlayState overlay;
 	private int switchToRedAfterTrainEntered;
 	private boolean lastReportedPower;
+	private int lastReportedPowerStrength;
 
 	public SignalTileEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 		this.state = SignalState.INVALID;
 		this.overlay = OverlayState.SKIP;
 		this.lastReportedPower = false;
+		this.lastReportedPowerStrength = 0;
 	}
 
 	@Override
@@ -109,7 +112,15 @@ public class SignalTileEntity extends SmartTileEntity implements ITransformableT
 			boundary.updateTilePower(this);
 			notifyUpdate();
 		});
-		
+
+		blockState.getOptionalValue(SignalBlock.POWERED_STRENGTH).ifPresent(powerStrength -> {
+			if (lastReportedPowerStrength == powerStrength)
+				return;
+			lastReportedPowerStrength = powerStrength;
+			boundary.updateTilePower(this);
+			notifyUpdate();
+		});
+
 		blockState.getOptionalValue(SignalBlock.TYPE)
 			.ifPresent(stateType -> {
 				SignalType targetType = boundary.getTypeFor(worldPosition);
@@ -125,6 +136,10 @@ public class SignalTileEntity extends SmartTileEntity implements ITransformableT
 
 	public boolean getReportedPower() {
 		return lastReportedPower;
+	}
+
+	public int getReportedPowerStrength(){
+		return lastReportedPowerStrength;
 	}
 
 	public SignalState getState() {

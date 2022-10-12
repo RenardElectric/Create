@@ -1,6 +1,7 @@
 package com.simibubi.create.content.logistics.trains.track;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,7 @@ import com.simibubi.create.content.logistics.trains.BezierConnection;
 import com.simibubi.create.content.logistics.trains.ITrackBlock;
 import com.simibubi.create.foundation.advancement.AllAdvancements;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
+import com.simibubi.create.foundation.config.AllConfigs;
 import com.simibubi.create.foundation.utility.AngleHelper;
 import com.simibubi.create.foundation.utility.Couple;
 import com.simibubi.create.foundation.utility.Iterate;
@@ -143,7 +145,7 @@ public class TrackPlacement {
 
 		if (pos1.equals(pos2))
 			return info.withMessage("second_point");
-		if (pos1.distSqr(pos2) > 32 * 32)
+		if (pos1.distSqr(pos2) > AllConfigs.SERVER.trains.maxTrackPlacementDistance.get() * AllConfigs.SERVER.trains.maxTrackPlacementDistance.get())
 			return info.withMessage("too_far")
 				.tooJumbly();
 		if (!state1.hasProperty(TrackBlock.HAS_TE))
@@ -205,7 +207,7 @@ public class TrackPlacement {
 
 				skipCurve = Mth.equal(u, 0);
 
-				if (!skipCurve && sTest[0] < 0)
+				if (!skipCurve && sTest[0] < 0 && !AllConfigs.SERVER.trains.canBePerpendicular.get())
 					return info.withMessage("perpendicular")
 						.tooJumbly();
 
@@ -215,12 +217,12 @@ public class TrackPlacement {
 					info.end1Extent = (int) Math.round((dist + 1) / axis1.length());
 
 				} else {
-					if (!Mth.equal(ascend, 0))
+					if (!Mth.equal(ascend, 0) && !AllConfigs.SERVER.trains.canCreateSlopedSBends.get())
 						return info.withMessage("ascending_s_curve");
 
 					double targetT = u <= 1 ? 3 : u * 2;
 
-					if (t < targetT)
+					if (t < targetT && !AllConfigs.SERVER.trains.canTurnSharp.get())
 						return info.withMessage("too_sharp");
 
 					// This is for standardising s curve sizes
@@ -260,10 +262,10 @@ public class TrackPlacement {
 				info.end2Extent = (int) Math.round(dist2 - dist1);
 
 			double turnSize = Math.min(dist1, dist2);
-			if (intersect[0] < 0 || intersect[1] < 0)
+			if (intersect[0] < 0 || intersect[1] < 0 && !AllConfigs.SERVER.trains.canTurnSharp.get())
 				return info.withMessage("too_sharp")
 					.tooJumbly();
-			if (turnSize < 2)
+			if (turnSize < 2 && !AllConfigs.SERVER.trains.canTurnSharp.get())
 				return info.withMessage("too_sharp");
 
 			// This is for standardising curve sizes
@@ -279,13 +281,13 @@ public class TrackPlacement {
 		if (skipCurve && !Mth.equal(ascend, 0)) {
 			int hDistance = info.end1Extent;
 			if (axis1.y == 0 || !Mth.equal(absAscend + 1, dist / axis1.length())) {
-				
-				if (axis1.y != 0 && axis1.y == -axis2.y)
+
+				if (axis1.y != 0 && axis1.y == -axis2.y && !AllConfigs.SERVER.trains.canTurnSharp.get())
 					return info.withMessage("ascending_s_curve");
-				
+
 				info.end1Extent = 0;
 				double minHDistance = Math.max(absAscend < 4 ? absAscend * 4 : absAscend * 3, 6) / axis1.length();
-				if (hDistance < minHDistance)
+				if (hDistance < minHDistance && !AllConfigs.SERVER.trains.canBeSteep.get() )
 					return info.withMessage("too_steep");
 				if (hDistance > minHDistance) {
 					int correction = (int) (hDistance - minHDistance);
@@ -301,7 +303,7 @@ public class TrackPlacement {
 
 		if (!parallel) {
 			float absAngle = Math.abs(AngleHelper.deg(angle));
-			if (absAngle < 60 || absAngle > 300)
+			if ((absAngle < 60 || absAngle > 300) && !AllConfigs.SERVER.trains.canTurnMoreThan90Degrees.get())
 				return info.withMessage("turn_90")
 					.tooJumbly();
 
@@ -319,7 +321,7 @@ public class TrackPlacement {
 			double turnSize = Math.min(dist1, dist2) - .1d;
 			boolean ninety = (absAngle + .25f) % 90 < 1;
 
-			if (intersect[0] < 0 || intersect[1] < 0)
+			if (intersect[0] < 0 || intersect[1] < 0 && !AllConfigs.SERVER.trains.canTurnSharp.get())
 				return info.withMessage("too_sharp")
 					.tooJumbly();
 
@@ -327,9 +329,9 @@ public class TrackPlacement {
 			double turnSizeToFitAscend =
 				minTurnSize + (ninety ? Math.max(0, absAscend - 3) * 2f : Math.max(0, absAscend - 1.5f) * 1.5f);
 
-			if (turnSize < minTurnSize)
+			if (turnSize < minTurnSize && !AllConfigs.SERVER.trains.canTurnSharp.get())
 				return info.withMessage("too_sharp");
-			if (turnSize < turnSizeToFitAscend)
+			if (turnSize < turnSizeToFitAscend && !AllConfigs.SERVER.trains.canBeSteep.get())
 				return info.withMessage("too_steep");
 
 			// This is for standardising curve sizes
@@ -443,10 +445,10 @@ public class TrackPlacement {
 			BlockItem paveItem = (BlockItem) offhandItem.getItem();
 			paveTracks(level, info, paveItem, false);
 		}
-		
+
 		if (info.curve != null && info.curve.getLength() > 29)
 			AllAdvancements.LONG_BEND.awardTo(player);
-		
+
 		return placeTracks(level, info, state1, state2, targetPos1, targetPos2, false);
 	}
 
@@ -619,7 +621,7 @@ public class TrackPlacement {
 		if (bhr.getDirection() == Direction.UP) {
 			Vec3 lookVec = player.getLookAngle();
 			int lookAngle = (int) (22.5 + AngleHelper.deg(Mth.atan2(lookVec.z, lookVec.x)) % 360) / 8;
-			
+
 			if (!pos.equals(hintPos) || lookAngle != hintAngle) {
 				hints = Couple.create(ArrayList::new);
 				hintAngle = lookAngle;

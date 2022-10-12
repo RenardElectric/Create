@@ -28,6 +28,29 @@ import net.minecraft.world.phys.Vec3;
 
 public class TrackPaver {
 
+	public static boolean equal(Vec3 vec1, Vec3 vec2) {
+		if (vec1 == vec2) {
+			return true;
+		} else {
+			if (compare(vec2.x, vec1.x) != 0) {
+				return false;
+			} else if (compare(vec2.y, vec1.y) != 0) {
+				return false;
+			} else {
+				return compare(vec2.z, vec1.z) == 0;
+			}
+		}
+	}
+
+	public static int compare(double d1, double d2) {
+		if (d1 < d2)
+			return -1;
+		if (d1 > d2)
+			return 1;
+
+		return 0;
+	}
+
 	public static int paveStraight(Level level, BlockPos startPos, Vec3 direction, int extent, Block block,
 		boolean simulate, Set<BlockPos> visited) {
 		int itemsNeeded = 0;
@@ -41,8 +64,7 @@ public class TrackPaver {
 
 		if (defaultBlockState.getBlock() instanceof GirderBlock)
 			for (Direction d : Iterate.horizontalDirections)
-				if (Vec3.atLowerCornerOf(d.getNormal())
-					.equals(direction))
+				if (equal(Vec3.atLowerCornerOf(d.getNormal()), direction))
 					defaultBlockState = defaultBlockState.setValue(GirderBlock.TOP, false)
 						.setValue(GirderBlock.BOTTOM, false)
 						.setValue(GirderBlock.AXIS, d.getAxis())

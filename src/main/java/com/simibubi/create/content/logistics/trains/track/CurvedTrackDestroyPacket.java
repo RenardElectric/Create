@@ -4,6 +4,7 @@ import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.trains.BezierConnection;
 import com.simibubi.create.content.logistics.trains.TrackPropagator;
+import com.simibubi.create.foundation.config.AllConfigs;
 import com.simibubi.create.foundation.networking.TileEntityConfigurationPacket;
 
 import net.minecraft.core.BlockPos;
@@ -48,7 +49,7 @@ public class CurvedTrackDestroyPacket extends TileEntityConfigurationPacket<Trac
 	@Override
 	protected void applySettings(ServerPlayer player, TrackTileEntity te) {
 		if (!te.getBlockPos()
-			.closerThan(player.blockPosition(), 128)) {
+			.closerThan(player.blockPosition(), AllConfigs.SERVER.trains.maxTrackPlacementDistance.get() * 4)) {
 			Create.LOGGER.warn(player.getScoreboardName() + " too far away from destroyed Curve track");
 			return;
 		}
@@ -67,7 +68,7 @@ public class CurvedTrackDestroyPacket extends TileEntityConfigurationPacket<Trac
 		if (wrench) {
 			AllSoundEvents.WRENCH_REMOVE.playOnServer(player.level, soundSource, 1,
 				Create.RANDOM.nextFloat() * .5f + .5f);
-			if (!player.isCreative() && bezierConnection != null) 
+			if (!player.isCreative() && bezierConnection != null)
 				bezierConnection.addItemsToPlayer(player);
 		} else if (!player.isCreative() && bezierConnection != null)
 			bezierConnection.spawnItems(level);
@@ -83,7 +84,7 @@ public class CurvedTrackDestroyPacket extends TileEntityConfigurationPacket<Trac
 
 	@Override
 	protected int maxRange() {
-		return 64;
+		return AllConfigs.SERVER.trains.maxTrackPlacementDistance.get() * 2;
 	}
 
 	@Override

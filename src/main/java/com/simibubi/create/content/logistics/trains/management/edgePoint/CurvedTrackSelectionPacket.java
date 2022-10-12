@@ -1,5 +1,7 @@
 package com.simibubi.create.content.logistics.trains.management.edgePoint;
 
+import com.simibubi.create.foundation.config.AllConfigs;
+
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import com.simibubi.create.AllBlocks;
@@ -97,7 +99,7 @@ public class CurvedTrackSelectionPacket extends TileEntityConfigurationPacket<Tr
 
 	@Override
 	protected int maxRange() {
-		return 64;
+		return AllConfigs.SERVER.trains.maxTrackPlacementDistance.get() * 2;
 	}
 
 	@Override

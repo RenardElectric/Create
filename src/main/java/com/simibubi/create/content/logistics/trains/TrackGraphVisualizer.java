@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import com.simibubi.create.foundation.config.AllConfigs;
+
 import org.lwjgl.glfw.GLFW;
 
 import com.simibubi.create.AllKeys;
@@ -48,7 +50,7 @@ public class TrackGraphVisualizer {
 				continue;
 
 			Vec3 location = nodeLocation.getLocation();
-			if (location.distanceTo(camera) > 50)
+			if (location.distanceTo(camera) > AllConfigs.CLIENT.maxTrackVisualizerDistance.get() * 2)
 				continue;
 			if (!mc.level.dimension()
 				.equals(nodeLocation.dimension))
@@ -215,7 +217,7 @@ public class TrackGraphVisualizer {
 			return;
 		AABB box = graph.getBounds(mc.level).box;
 		if (box == null || !box.intersects(cameraEntity.getBoundingBox()
-			.inflate(50)))
+			.inflate(AllConfigs.CLIENT.maxTrackVisualizerDistance.get() * 2)))
 			return;
 
 		Vec3 camera = cameraEntity.getEyePosition();
@@ -226,7 +228,7 @@ public class TrackGraphVisualizer {
 				continue;
 
 			Vec3 location = nodeLocation.getLocation();
-			if (location.distanceTo(camera) > 50)
+			if (location.distanceTo(camera) > AllConfigs.CLIENT.maxTrackVisualizerDistance.get() * 2)
 				continue;
 			if (!mc.level.dimension()
 				.equals(nodeLocation.dimension))

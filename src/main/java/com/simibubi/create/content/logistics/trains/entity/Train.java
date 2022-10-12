@@ -124,7 +124,7 @@ public class Train {
 	public int honkPitch;
 
 	public float accumulatedSteamRelease;
-	
+
 	int tickOffset;
 	double[] stress;
 
@@ -317,7 +317,7 @@ public class Train {
 						entries++;
 					}
 				}
-				
+
 
 				if (entries > 0)
 					actual = total / entries;
@@ -369,7 +369,7 @@ public class Train {
 					.getLeadingPoint();
 
 			double totalStress = derailed ? 0 : leadingStress + trailingStress;
-			
+
 			boolean first = i == 0;
 			boolean last = i == carriageCount - 1;
 			int carriageType = first ? last ? Carriage.BOTH : Carriage.FIRST : last ? Carriage.LAST : Carriage.MIDDLE;
@@ -598,14 +598,20 @@ public class Train {
 
 		Train train = collision.getFirst();
 
-		double combinedSpeed = Math.abs(speed) + Math.abs(train.speed);
-		if (combinedSpeed > .2f) {
-			Vec3 v = collision.getSecond();
-			level.explode(null, v.x, v.y, v.z, (float) Math.min(3 * combinedSpeed, 5), BlockInteraction.NONE);
-		}
+		if (!AllConfigs.SERVER.trains.canCollide.get()){
+			speed = speed > 0 ? -0.1 : 0.1;
+			navigation.waitingForTrain = train;
+		} else {
 
-		crash();
-		train.crash();
+			double combinedSpeed = Math.abs(speed) + Math.abs(train.speed);
+			if (combinedSpeed > .2f) {
+				Vec3 v = collision.getSecond();
+				level.explode(null, v.x, v.y, v.z, (float) Math.min(3 * combinedSpeed, 5), BlockInteraction.NONE);
+			}
+
+			crash();
+			train.crash();
+		}
 	}
 
 	public static Pair<Train, Vec3> findCollidingTrain(Level level, Vec3 start, Vec3 end, Train ignore,
