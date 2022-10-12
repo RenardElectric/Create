@@ -3,6 +3,8 @@ package com.simibubi.create.content.logistics.trains.management.edgePoint;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import com.simibubi.create.foundation.config.AllConfigs;
+
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import com.simibubi.create.AllSoundEvents;
@@ -120,7 +122,12 @@ public class TrackTargetingBlockItem extends BlockItem {
 
 		boolean bezier = tag.contains("Bezier");
 
-		if (!selectedPos.closerThan(placedPos, bezier ? 64 + 16 : 16)) {
+		int distance = AllConfigs.SERVER.trains.maxTrackPlacementDistance.get();
+
+		if (distance % 2 != 0)
+			distance ++;
+
+		if (!selectedPos.closerThan(placedPos, bezier ? distance * 2 + distance / 2 : distance / 2)) {
 			player.displayClientMessage(Lang.translateDirect("track_target.too_far")
 				.withStyle(ChatFormatting.RED), true);
 			return InteractionResult.FAIL;
@@ -141,10 +148,10 @@ public class TrackTargetingBlockItem extends BlockItem {
 			itemInHand.setTag(null);
 		player.displayClientMessage(Lang.translateDirect("track_target.success")
 			.withStyle(ChatFormatting.GREEN), true);
-		
+
 		if (type == EdgePointType.SIGNAL)
 			AllAdvancements.SIGNAL.awardTo(player);
-		
+
 		return useOn;
 	}
 

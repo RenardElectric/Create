@@ -10,6 +10,7 @@ import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.trains.DimensionPalette;
 import com.simibubi.create.content.logistics.trains.TrackGraph;
 import com.simibubi.create.content.logistics.trains.TrackNode;
+import com.simibubi.create.content.logistics.trains.entity.Train;
 import com.simibubi.create.content.logistics.trains.management.edgePoint.EdgePointType;
 import com.simibubi.create.content.logistics.trains.management.edgePoint.signal.SignalBlock.SignalType;
 import com.simibubi.create.content.logistics.trains.management.edgePoint.signal.SignalTileEntity.OverlayState;
@@ -28,7 +29,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class SignalBoundary extends TrackEdgePoint {
 
-	public Couple<Map<BlockPos, Boolean>> blockEntities;
+	public Couple<Map<BlockPos, String>> blockEntities;
 	public Couple<SignalType> types;
 	public Couple<UUID> groups;
 	public Couple<Boolean> sidesToUpdate;
@@ -97,18 +98,33 @@ public class SignalBoundary extends TrackEdgePoint {
 
 	@Override
 	public void tileAdded(BlockEntity tile, boolean front) {
-		Map<BlockPos, Boolean> tilesOnSide = blockEntities.get(front);
+		Map<BlockPos, String> tilesOnSide = blockEntities.get(front);
 		if (tilesOnSide.isEmpty())
 			tile.getBlockState()
 				.getOptionalValue(SignalBlock.TYPE)
 				.ifPresent(type -> types.set(front, type));
-		tilesOnSide.put(tile.getBlockPos(), tile instanceof SignalTileEntity ste && ste.getReportedPower());
+		if (tile instanceof SignalTileEntity ste && ste.getReportedPowerStrength() <= 7 && ste.getReportedPowerStrength() > 0){
+			tilesOnSide.put(tile.getBlockPos(), "green");
+		} if (tile instanceof SignalTileEntity ste && ste.getReportedPower()) {
+			tilesOnSide.put(tile.getBlockPos(), "red");
+		} else {
+			tilesOnSide.put(tile.getBlockPos(), "white");
+		}
 	}
 
 	public void updateTilePower(SignalTileEntity tile) {
-		for (boolean front : Iterate.trueAndFalse)
-			blockEntities.get(front)
-				.computeIfPresent(tile.getBlockPos(), (p, c) -> tile.getReportedPower());
+		for (boolean front : Iterate.trueAndFalse){
+			if (tile.getReportedPowerStrength() <= 7 && tile.getReportedPowerStrength() > 0){
+				blockEntities.get(front)
+						.computeIfPresent(tile.getBlockPos(), (p, c) -> "green");
+			} else if (tile.getReportedPower()) {
+				blockEntities.get(front)
+						.computeIfPresent(tile.getBlockPos(), (p, c) -> "red");
+			} else {
+				blockEntities.get(front)
+						.computeIfPresent(tile.getBlockPos(), (p, c) -> "white");
+			}
+		}
 	}
 
 	@Override
@@ -140,7 +156,7 @@ public class SignalBoundary extends TrackEdgePoint {
 
 	public OverlayState getOverlayFor(BlockPos tile) {
 		for (boolean first : Iterate.trueAndFalse) {
-			Map<BlockPos, Boolean> set = blockEntities.get(first);
+			Map<BlockPos, String> set = blockEntities.get(first);
 			for (BlockPos blockPos : set.keySet()) {
 				if (blockPos.equals(tile))
 					return blockEntities.get(!first)
@@ -158,7 +174,7 @@ public class SignalBoundary extends TrackEdgePoint {
 
 	public SignalState getStateFor(BlockPos tile) {
 		for (boolean first : Iterate.trueAndFalse) {
-			Map<BlockPos, Boolean> set = blockEntities.get(first);
+			Map<BlockPos, String> set = blockEntities.get(first);
 			if (set.containsKey(tile))
 				return cachedStates.get(first);
 		}
@@ -183,13 +199,17 @@ public class SignalBoundary extends TrackEdgePoint {
 
 	private void tickState(TrackGraph graph) {
 		for (boolean current : Iterate.trueAndFalse) {
-			Map<BlockPos, Boolean> set = blockEntities.get(current);
+			Map<BlockPos, String> set = blockEntities.get(current);
 			if (set.isEmpty())
 				continue;
 
 			boolean forcedRed = set.values()
-				.stream()
-				.anyMatch(Boolean::booleanValue);
+					.stream()
+					.anyMatch(str -> str.equals("red"));
+
+			boolean forcedGreen = set.values()
+					.stream()
+					.anyMatch(str -> str.equals("green"));
 
 			UUID group = groups.get(current);
 			if (Objects.equal(group, groups.get(!current))) {
@@ -204,7 +224,7 @@ public class SignalBoundary extends TrackEdgePoint {
 				continue;
 			}
 
-			boolean occupiedUnlessBySelf = forcedRed || signalEdgeGroup.isOccupiedUnless(this);
+			boolean occupiedUnlessBySelf = !forcedGreen && (forcedRed || signalEdgeGroup.isOccupiedUnless(this));
 			cachedStates.set(current, occupiedUnlessBySelf ? SignalState.RED : resolveSignalChain(graph, current));
 		}
 	}
@@ -217,7 +237,18 @@ public class SignalBoundary extends TrackEdgePoint {
 		return blockEntities.get(primary)
 			.values()
 			.stream()
-			.anyMatch(Boolean::booleanValue);
+			.anyMatch(str -> str.equals("red"));
+	}
+
+	public boolean isForcedGreen(TrackNode side) {
+		return isForcedGreen(isPrimary(side));
+	}
+
+	public boolean isForcedGreen(boolean primary) {
+		return blockEntities.get(primary)
+				.values()
+				.stream()
+				.anyMatch(str -> str.equals("green"));
 	}
 
 	private SignalState resolveSignalChain(TrackGraph graph, boolean side) {
@@ -272,7 +303,7 @@ public class SignalBoundary extends TrackEdgePoint {
 			if (nbt.contains("Tiles" + i)) {
 				boolean first = i == 1;
 				NBTHelper.iterateCompoundList(nbt.getList("Tiles" + i, Tag.TAG_COMPOUND), c -> blockEntities.get(first)
-					.put(NbtUtils.readBlockPos(c), c.getBoolean("Power")));
+					.put(NbtUtils.readBlockPos(c), c.getString("Power")));
 			}
 
 		for (int i = 1; i <= 2; i++)
@@ -304,7 +335,7 @@ public class SignalBoundary extends TrackEdgePoint {
 				nbt.put("Tiles" + i, NBTHelper.writeCompoundList(blockEntities.get(i == 1)
 					.entrySet(), e -> {
 						CompoundTag c = NbtUtils.writeBlockPos(e.getKey());
-						c.putBoolean("Power", e.getValue());
+						c.putString("Power", e.getValue());
 						return c;
 					}));
 		for (int i = 1; i <= 2; i++)

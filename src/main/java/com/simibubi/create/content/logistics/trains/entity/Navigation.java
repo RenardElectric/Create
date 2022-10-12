@@ -59,6 +59,8 @@ public class Navigation {
 	public double distanceToSignal;
 	public int ticksWaitingForSignal;
 
+	public Train waitingForTrain;
+
 	public Navigation(Train train) {
 		this.train = train;
 		currentPath = new ArrayList<>();
@@ -107,6 +109,12 @@ public class Navigation {
 				if (signal != null && signal.types.get(waitingForSignal.getSecond()) == SignalType.CROSS_SIGNAL)
 					waitingForChainedGroups.clear();
 				waitingForSignal = null;
+			}
+
+			if (waitingForTrain != null) {
+				if (!currentTrainResolved() && !train.reservedSignalBlocks.isEmpty())
+					train.reservedSignalBlocks.clear();
+				waitingForTrain = null;
 			}
 
 			TravellingPoint leadingPoint = !destinationBehindTrain ? train.carriages.get(0)
@@ -158,7 +166,7 @@ public class Navigation {
 						boolean primary = entering.equals(signal.groups.getFirst());
 						boolean crossSignal = signal.types.get(primary) == SignalType.CROSS_SIGNAL;
 						boolean occupied = !train.manualTick
-							&& (signal.isForcedRed(nodes.getSecond()) || signalEdgeGroup.isOccupiedUnless(train));
+							&& !signal.isForcedGreen(nodes.getSecond()) && (signal.isForcedRed(nodes.getSecond()) || signalEdgeGroup.isOccupiedUnless(train));
 
 						if (!crossSignalTracked) {
 							if (crossSignal) { // Now entering cross signal path
@@ -251,7 +259,7 @@ public class Navigation {
 				return;
 			}
 		}
-		
+
 		topSpeed *= train.throttle;
 		double turnTopSpeed = Math.min(topSpeed, train.maxTurnSpeed());
 
@@ -316,6 +324,14 @@ public class Navigation {
 		if (signalEdgeGroup == null)
 			return true;
 		if (!signalEdgeGroup.isOccupiedUnless(train))
+			return true;
+		return false;
+	}
+
+	private boolean currentTrainResolved() {
+		if (train.manualTick)
+			return true;
+		if (distanceToDestination < .5f)
 			return true;
 		return false;
 	}

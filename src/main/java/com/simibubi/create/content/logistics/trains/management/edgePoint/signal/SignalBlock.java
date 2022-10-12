@@ -1,5 +1,7 @@
 package com.simibubi.create.content.logistics.trains.management.edgePoint.signal;
 
+import java.util.Random;
+
 import javax.annotation.Nullable;
 
 import com.simibubi.create.AllTileEntities;
@@ -10,7 +12,6 @@ import com.simibubi.create.foundation.utility.Lang;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -25,11 +26,13 @@ import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 public class SignalBlock extends Block implements ITE<SignalTileEntity>, IWrenchable {
 
 	public static final EnumProperty<SignalType> TYPE = EnumProperty.create("type", SignalType.class);
 	public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+	public static final IntegerProperty POWERED_STRENGTH = BlockStateProperties.POWER;
 
 	public enum SignalType implements StringRepresentable {
 		ENTRY_SIGNAL, CROSS_SIGNAL;
@@ -43,7 +46,8 @@ public class SignalBlock extends Block implements ITE<SignalTileEntity>, IWrench
 	public SignalBlock(Properties p_53182_) {
 		super(p_53182_);
 		registerDefaultState(defaultBlockState().setValue(TYPE, SignalType.ENTRY_SIGNAL)
-			.setValue(POWERED, false));
+			.setValue(POWERED, false)
+				.setValue(POWERED_STRENGTH, 0));
 	}
 
 	@Override
@@ -53,7 +57,7 @@ public class SignalBlock extends Block implements ITE<SignalTileEntity>, IWrench
 
 	@Override
 	protected void createBlockStateDefinition(Builder<Block, BlockState> pBuilder) {
-		super.createBlockStateDefinition(pBuilder.add(TYPE, POWERED));
+		super.createBlockStateDefinition(pBuilder.add(TYPE, POWERED, POWERED_STRENGTH));
 	}
 
 	@Override
@@ -66,7 +70,8 @@ public class SignalBlock extends Block implements ITE<SignalTileEntity>, IWrench
 	public BlockState getStateForPlacement(BlockPlaceContext pContext) {
 		return this.defaultBlockState()
 			.setValue(POWERED, Boolean.valueOf(pContext.getLevel()
-				.hasNeighborSignal(pContext.getClickedPos())));
+				.hasNeighborSignal(pContext.getClickedPos())))
+				.setValue(POWERED_STRENGTH, pContext.getLevel().getBestNeighborSignal(pContext.getClickedPos()));
 	}
 
 	@Override
@@ -75,19 +80,23 @@ public class SignalBlock extends Block implements ITE<SignalTileEntity>, IWrench
 		if (pLevel.isClientSide)
 			return;
 		boolean powered = pState.getValue(POWERED);
-		if (powered == pLevel.hasNeighborSignal(pPos))
+		int powered_strength = pState.getValue(POWERED_STRENGTH);
+		if (powered == pLevel.hasNeighborSignal(pPos) && powered_strength == pLevel.getBestNeighborSignal(pPos))
 			return;
 		if (powered) {
 			pLevel.scheduleTick(pPos, this, 4);
 		} else {
-			pLevel.setBlock(pPos, pState.cycle(POWERED), 2);
+			pLevel.setBlock(pPos, pState.cycle(POWERED).setValue(POWERED_STRENGTH, pLevel.getBestNeighborSignal(pPos)), 2);
 		}
 	}
 
 	@Override
-	public void tick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRand) {
-		if (pState.getValue(POWERED) && !pLevel.hasNeighborSignal(pPos))
-			pLevel.setBlock(pPos, pState.cycle(POWERED), 2);
+	public void tick(BlockState pState, ServerLevel pLevel, BlockPos pPos, Random pRand) {
+		if (pState.getValue(POWERED) && !pLevel.hasNeighborSignal(pPos)) {
+			pLevel.setBlock(pPos, pState.cycle(POWERED).setValue(POWERED_STRENGTH, pLevel.getBestNeighborSignal(pPos)), 2);
+		} else {
+			pLevel.setBlock(pPos, pState.setValue(POWERED_STRENGTH, pLevel.getBestNeighborSignal(pPos)), 2);
+		}
 	}
 
 	@Override

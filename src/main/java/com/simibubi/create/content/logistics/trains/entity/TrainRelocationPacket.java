@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.contraptions.components.structureMovement.ContraptionRelocationPacket;
 import com.simibubi.create.content.logistics.trains.track.BezierTrackPointLocation;
+import com.simibubi.create.foundation.config.AllConfigs;
 import com.simibubi.create.foundation.networking.AllPackets;
 import com.simibubi.create.foundation.networking.SimplePacketBase;
 import com.simibubi.create.foundation.utility.Lang;
@@ -84,12 +85,12 @@ public class TrainRelocationPacket extends SimplePacketBase {
 				return;
 
 			if (!sender.position()
-				.closerThan(Vec3.atCenterOf(pos), 64)) {
+				.closerThan(Vec3.atCenterOf(pos), AllConfigs.SERVER.trains.maxTrainRelocationDistance.get() + 2)) {
 				Create.LOGGER.warn(messagePrefix + train.name.getString() + ": player too far from clicked pos");
 				return;
 			}
 			if (!sender.position()
-				.closerThan(cce.position(), 64 + cce.getBoundingBox()
+				.closerThan(cce.position(), AllConfigs.SERVER.trains.maxTrainRelocationDistance.get() + 2 + cce.getBoundingBox()
 					.getXsize() / 2)) {
 				Create.LOGGER.warn(messagePrefix + train.name.getString() + ": player too far from carriage entity");
 				return;
