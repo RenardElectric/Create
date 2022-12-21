@@ -27,8 +27,6 @@ public class CTrains extends ConfigBase {
 	public final ConfigInt maxTrainRelocationDistance = i(24,24, "maxTrainRelocationDistance", Comments.maxTrainRelocationDistance);
 	public final ConfigBool canCollide = b(true, "canCollide", Comments.canCollide);
 
-
-
 	@Override
 	public String getName() {
 		return "trains";

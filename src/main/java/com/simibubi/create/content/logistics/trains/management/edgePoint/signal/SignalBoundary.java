@@ -10,7 +10,6 @@ import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.trains.DimensionPalette;
 import com.simibubi.create.content.logistics.trains.TrackGraph;
 import com.simibubi.create.content.logistics.trains.TrackNode;
-import com.simibubi.create.content.logistics.trains.entity.Train;
 import com.simibubi.create.content.logistics.trains.management.edgePoint.EdgePointType;
 import com.simibubi.create.content.logistics.trains.management.edgePoint.signal.SignalBlock.SignalType;
 import com.simibubi.create.content.logistics.trains.management.edgePoint.signal.SignalTileEntity.OverlayState;

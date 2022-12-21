@@ -277,7 +277,7 @@ public class Train {
 		int carriageCount = carriages.size();
 		boolean stalled = false;
 		double maxStress = 0;
-		
+
 		if (carriageWaitingForChunks != -1)
 			distance = 0;
 
